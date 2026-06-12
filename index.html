@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMR Monitoring System - Fault Tolerant Dashboard</title>
+    <meta name="description" content="Dashboard monitoring real-time untuk sistem Fault Tolerant Sensor berbasis Triple Modular Redundancy (TMR) dengan visualisasi status fault.">
+    
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #0B0F19;
+            --bg-surface: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            
+            /* Neon color gradients */
+            --color-healthy-start: #00F2FE;
+            --color-healthy-end: #4FACFE;
+            --color-transient-start: #F7971E;
+            --color-transient-end: #FFD200;
+            --color-permanent-start: #F857A6;
+            --color-permanent-end: #FF5858;
+            --color-system-start: #8EC5FC;
+            --color-system-end: #E0C3FC;
+            
+            --shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Bar & Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 16px 24px;
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-primary);
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+        }
+
+        .header-logo svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        .header-titles h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #FFFFFF, #E2E8F0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-titles p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Controller / IP Configuration Panel */
+        .config-panel {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 12px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 4px 8px;
+            transition: border-color 0.2s;
+        }
+
+        .input-group:focus-within {
+            border-color: #4FACFE;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-right: 6px;
+            text-transform: uppercase;
+        }
+
+        .input-group input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            outline: none;
+            width: 140px;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-connect:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-connect:active {
+            transform: translateY(1px);
+        }
+
+        /* Status Indicator */
+        .conn-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #EF4444;
+            transition: background-color 0.3s;
+        }
+
+        .status-dot.connected {
+            background-color: #10B981;
+            box-shadow: 0 0 8px #10B981;
+            animation: pulse-green 1.5s infinite;
+        }
+
+        .status-dot.connecting {
+            background-color: #F59E0B;
+            box-shadow: 0 0 8px #F59E0B;
+            animation: pulse-orange 1s infinite;
+        }
+
+        .status-dot.disconnected {
+            background-color: #EF4444;
+            box-shadow: 0 0 8px #EF4444;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        /* Dashboard Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow-primary);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: transparent;
+            transition: background 0.3s;
+        }
+
+        /* System Card (Full Width Span) */
+        .system-card {
+            grid-column: span 3;
+            background: radial-gradient(circle at 100% 0%, rgba(142, 197, 252, 0.08) 0%, transparent 50%), var(--bg-surface);
+            border: 1px solid rgba(142, 197, 252, 0.15);
+            padding: 36px;
+        }
+
+        .system-card::before {
+            background: linear-gradient(to right, var(--color-system-start), var(--color-system-end));
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        /* Value styling */
+        .card-value-wrapper {
+            margin: 16px 0;
+        }
+
+        .card-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #D1D5DB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .system-card .card-value {
+            font-size: 4.5rem;
+            background: linear-gradient(135deg, #FFFFFF 30%, #A5B4FC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .unit {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-left: 8px;
+            letter-spacing: normal;
+            -webkit-text-fill-color: initial;
+            background: none;
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.25px;
+            text-transform: uppercase;
+            width: fit-content;
+            margin-top: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .badge-normal {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34D399;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #FBBF24;
+            border-color: rgba(245, 158, 11, 0.2);
+            animation: warning-pulse 2s infinite;
+        }
+
+        .badge-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #FCA5A5;
+            border-color: rgba(239, 68, 68, 0.2);
+            animation: error-pulse 1.5s infinite;
+        }
+
+        @keyframes warning-pulse {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.2); box-shadow: none; }
+            50% { border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 10px rgba(245, 158, 11, 0.1); }
+        }
+
+        @keyframes error-pulse {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.2); box-shadow: none; }
+            50% { border-color: rgba(239, 68, 68, 0.6); box-shadow: 0 0 12px rgba(239, 68, 68, 0.2); }
+        }
+
+        /* Specific Sensor Card Colors on Fault */
+        .card.sensor-healthy::before {
+            background: linear-gradient(to right, var(--color-healthy-start), var(--color-healthy-end));
+        }
+
+        .card.sensor-warning {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.05) 0%, transparent 50%), var(--bg-surface);
+        }
+        .card.sensor-warning::before {
+            background: linear-gradient(to right, var(--color-transient-start), var(--color-transient-end));
+        }
+
+        .card.sensor-error {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.05) 0%, transparent 50%), var(--bg-surface);
+        }
+        .card.sensor-error::before {
+            background: linear-gradient(to right, var(--color-permanent-start), var(--color-permanent-end));
+        }
+
+        /* Fault Progress / Visualizer */
+        .fault-visualizer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fault-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .fault-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .fault-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .fault-dot.active {
+            background: #F59E0B;
+            box-shadow: 0 0 6px #F59E0B;
+        }
+
+        .fault-dot.permanent {
+            background: #EF4444;
+            box-shadow: 0 0 6px #EF4444;
+        }
+
+        /* Extra Info Footer */
+        .system-extra {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .system-card {
+                grid-column: span 1;
+            }
+            header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .config-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-group input {
+                width: 100%;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px 0 10px 0;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        footer a {
+            color: #4FACFE;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: #00F2FE;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header>
+            <div class="header-title-container">
+                <div class="header-logo">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+                    </svg>
+                </div>
+                <div class="header-titles">
+                    <h1 id="main-heading">Sistem Monitoring TMR</h1>
+                    <p>Fault Tolerant System &bull; Tugas Akhir Kelompok</p>
+                </div>
+            </div>
+
+            <!-- Controller Settings Panel -->
+            <div class="config-panel">
+                <div class="conn-status">
+                    <span class="status-dot" id="conn-dot"></span>
+                    <span id="conn-text">Mencari Konfigurasi</span>
+                </div>
+                <div class="input-group">
+                    <label for="ip-address">IP ESP32:</label>
+                    <input type="text" id="ip-address" placeholder="192.168.x.x" value="192.168.4.1">
+                </div>
+                <button class="btn-connect" id="btn-connect" onclick="updateIP()">Hubungkan</button>
+            </div>
+        </header>
+
+        <!-- Monitoring Dashboard Grid -->
+        <div class="grid">
+            
+            <!-- TMR Final Output Card (Voter Output) -->
+            <div class="card system-card" id="card-sys">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                        TMR Final Output (Voted)
+                    </div>
+                </div>
+                <div class="card-value-wrapper">
+                    <div class="card-value" id="val-sys">--<span class="unit">cm</span></div>
+                </div>
+                <div class="badge badge-normal" id="status-sys">Menunggu Data...</div>
+
+                <!-- Extra statistics info -->
+                <div class="system-extra">
+                    <div class="info-item">
+                        <span class="info-label">Voted Median</span>
+                        <span class="info-value" id="val-median">-- cm</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Active Sensors</span>
+                        <span class="info-value" id="val-active-sensors">0 / 3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor 1 Card -->
+            <div class="card" id="card-s1">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M13.5 5.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        Sensor 1
+                    </div>
+                </div>
+                <div class="card-value-wrapper">
+                    <div class="card-value" id="val-s1">--<span class="unit">cm</span></div>
+                </div>
+                <div class="badge badge-normal" id="badge-s1">Sehat</div>
+
+                <div class="fault-visualizer">
+                    <span class="fault-label">Fault History (4 Max)</span>
+                    <div class="fault-dots" id="dots-s1">
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor 2 Card -->
+            <div class="card" id="card-s2">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M13.5 5.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        Sensor 2
+                    </div>
+                </div>
+                <div class="card-value-wrapper">
+                    <div class="card-value" id="val-s2">--<span class="unit">cm</span></div>
+                </div>
+                <div class="badge badge-normal" id="badge-s2">Sehat</div>
+
+                <div class="fault-visualizer">
+                    <span class="fault-label">Fault History (4 Max)</span>
+                    <div class="fault-dots" id="dots-s2">
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor 3 Card -->
+            <div class="card" id="card-s3">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M13.5 5.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        Sensor 3
+                    </div>
+                </div>
+                <div class="card-value-wrapper">
+                    <div class="card-value" id="val-s3">--<span class="unit">cm</span></div>
+                </div>
+                <div class="badge badge-normal" id="badge-s3">Sehat</div>
+
+                <div class="fault-visualizer">
+                    <span class="fault-label">Fault History (4 Max)</span>
+                    <div class="fault-dots" id="dots-s3">
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                        <div class="fault-dot"></div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Fault Tolerant System Dashboard &bull; Dibuat untuk monitoring kestabilan data sensor ultrasonik.</p>
+    </footer>
+
+    <script>
+        const threshold = 5.0;
+        const TRANSIENT_LIMIT = 4;
+        
+        let faultCount = { s1: 0, s2: 0, s3: 0 };
+        let esp32IP = "http://192.168.4.1"; // Default IP
+        let updateTimeoutId = null;
+
+        // Load saved IP on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedIP = localStorage.getItem('esp32_ip');
+            const ipInput = document.getElementById('ip-address');
+            
+            if (savedIP) {
+                esp32IP = savedIP;
+                ipInput.value = savedIP.replace(/^https?:\/\//, '');
+            } else {
+                localStorage.setItem('esp32_ip', esp32IP);
+            }
+            
+            triggerImmediateFetch();
+        });
+
+        // Trigger connection updating from the input
+        function updateIP() {
+            const ipInput = document.getElementById('ip-address').value.trim();
+            if (!ipInput) return;
+
+            // Formulate standard URL prefix if missing
+            if (!/^https?:\/\//i.test(ipInput)) {
+                esp32IP = `http://${ipInput}`;
+            } else {
+                esp32IP = ipInput;
+            }
+
+            // Save IP to localStorage
+            localStorage.setItem('esp32_ip', esp32IP);
+
+            // Reset fault counters on target change
+            faultCount = { s1: 0, s2: 0, s3: 0 };
+            updateFaultDots('s1', 0);
+            updateFaultDots('s2', 0);
+            updateFaultDots('s3', 0);
+
+            // Notify user & trigger immediately
+            const connText = document.getElementById('conn-text');
+            const connDot = document.getElementById('conn-dot');
+            connText.innerText = "Connecting...";
+            connDot.className = "status-dot connecting";
+            
+            triggerImmediateFetch();
+        }
+
+        function triggerImmediateFetch() {
+            if (updateTimeoutId) {
+                clearTimeout(updateTimeoutId);
+            }
+            fetchData();
+        }
+
+        // Helper to update the visual representation of transient fault history (dots)
+        function updateFaultDots(id, count) {
+            const dotsContainer = document.getElementById(`dots-${id}`);
+            if (!dotsContainer) return;
+            
+            const dots = dotsContainer.getElementsByClassName('fault-dot');
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].className = 'fault-dot'; // Reset class
+                
+                if (count >= TRANSIENT_LIMIT) {
+                    dots[i].classList.add('permanent');
+                } else if (i < count) {
+                    dots[i].classList.add('active');
+                }
+            }
+        }
+
+        function processSensorData(id, val, median) {
+            const card = document.getElementById(`card-${id}`);
+            const valEl = document.getElementById(`val-${id}`);
+            const badge = document.getElementById(`badge-${id}`);
+
+            let isFault = false;
+
+            if (val === -1.0 || Math.abs(val - median) > threshold) {
+                isFault = true;
+            }
+
+            if (isFault) {
+                faultCount[id]++;
+                
+                // Set text
+                valEl.innerHTML = val === -1.0 ? `N/A` : `${val.toFixed(1)}<span class="unit">cm</span>`;
+
+                if (faultCount[id] >= TRANSIENT_LIMIT) {
+                    card.className = "card sensor-error";
+                    badge.className = "badge badge-error";
+                    badge.innerText = "Permanent Fault";
+                } else {
+                    card.className = "card sensor-warning";
+                    badge.className = "badge badge-warning";
+                    badge.innerText = `Transient Fault (${faultCount[id]}/${TRANSIENT_LIMIT})`;
+                }
+            } else {
+                faultCount[id] = 0;
+                valEl.innerHTML = `${val.toFixed(1)}<span class="unit">cm</span>`;
+                card.className = "card sensor-healthy";
+                badge.className = "badge badge-normal";
+                badge.innerText = "Sehat";
+            }
+
+            updateFaultDots(id, faultCount[id]);
+            return isFault ? 1 : 0;
+        }
+
+        async function fetchData() {
+            const connText = document.getElementById('conn-text');
+            const connDot = document.getElementById('conn-dot');
+            
+            try {
+                // Fetch with a relatively short timeout (800ms) to detect connection drops quickly
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 800);
+                
+                const response = await fetch(`${esp32IP}/data`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+
+                // Set Connection indicators to success
+                connText.innerText = `Connected (${esp32IP.replace(/^https?:\/\//, '')})`;
+                connDot.className = "status-dot connected";
+
+                let faultTotal = 0;
+                faultTotal += processSensorData('s1', data.s1, data.median);
+                faultTotal += processSensorData('s2', data.s2, data.median);
+                faultTotal += processSensorData('s3', data.s3, data.median);
+
+                const sysCard = document.getElementById('card-sys');
+                const sysVal = document.getElementById('val-sys');
+                const sysStatus = document.getElementById('status-sys');
+                const sysMedian = document.getElementById('val-median');
+                const sysActiveSensors = document.getElementById('val-active-sensors');
+
+                // Display voted systems
+                if (data.output !== -1.0) {
+                    sysVal.innerHTML = `${data.output.toFixed(2)}<span class="unit">cm</span>`;
+                } else {
+                    sysVal.innerHTML = `<span style="font-size: 3rem; color: #EF4444; font-weight: 800;">HALTED</span>`;
+                }
+                
+                sysMedian.innerText = `${data.median.toFixed(2)} cm`;
+                
+                // Count active sensors
+                let activeCount = 0;
+                if (data.s1 !== -1.0) activeCount++;
+                if (data.s2 !== -1.0) activeCount++;
+                if (data.s3 !== -1.0) activeCount++;
+                sysActiveSensors.innerText = `${activeCount} / 3`;
+
+                if (faultTotal === 0) {
+                    sysCard.className = "card system-card";
+                    sysStatus.className = "badge badge-normal";
+                    sysStatus.innerText = "Sistem Normal (3/3 Aktif)";
+                } else if (faultTotal === 1) {
+                    sysCard.className = "card system-card sensor-warning";
+                    sysStatus.className = "badge badge-warning";
+                    sysStatus.innerText = "Degradasi (2/3 Aktif) - Masking Aktif";
+                } else {
+                    sysCard.className = "card system-card sensor-error";
+                    sysStatus.className = "badge badge-error";
+                    sysStatus.innerText = "Kritis - Memasuki Fail-Safe";
+                }
+
+            } catch (error) {
+                // Update Connection indicators to offline/error
+                connText.innerText = `Terputus (${esp32IP.replace(/^https?:\/\//, '')})`;
+                connDot.className = "status-dot disconnected";
+                
+                console.log("Menunggu koneksi ESP32...", error);
+            }
+
+            // Schedule next check in 1000ms
+            updateTimeoutId = setTimeout(fetchData, 1000);
+        }
+    </script>
+</body>
+
+</html>
