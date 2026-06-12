@@ -3,8 +3,8 @@
 
 #define THRESHOLD 5.0
 
-const char* ssid = "fariscps";
-const char* password = "12345678";
+const char* ssid = "inissid";
+const char* password = "inipassword";
 
 WebServer server(80);
 
