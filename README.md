@@ -1,131 +1,124 @@
 <div align="center">
 
-# 🚰 IoT Water Tank Monitoring System with Triple Modular Redundancy (TMR)
+# 🚰 Sistem Pemantauan Volume Air Berbasis IoT dengan Triple Modular Redundancy (TMR)
 
-### Fault Tolerant System Final Project
+### Proyek Akhir Mata Kuliah Fault Tolerant System
 
-Implementation of Triple Modular Redundancy (TMR) using ESP32 and three HC-SR04 ultrasonic sensors for reliable water level monitoring with real-time web dashboard visualization.
-
-<img src="assets/banner.png" width="800">
-
-![ESP32](https://img.shields.io/badge/ESP32-IoT-blue)
-![TMR](https://img.shields.io/badge/Fault%20Tolerance-TMR-green)
-![HC-SR04](https://img.shields.io/badge/Sensor-HC--SR04-orange)
-![License](https://img.shields.io/badge/License-MIT-red)
+Implementasi **Triple Modular Redundancy (TMR)** menggunakan mikrokontroler ESP32 dan tiga sensor ultrasonik HC-SR04 untuk meningkatkan keandalan sistem pemantauan volume air secara real-time.
 
 </div>
 
 ---
 
-# 📖 Project Overview
+# 📖 Deskripsi Proyek
 
-Traditional water tank monitoring systems generally rely on a single sensor. While inexpensive and simple to implement, this approach introduces a **Single Point of Failure (SPOF)**. When the sensor experiences malfunction, power disturbance, or environmental interference, the entire monitoring system may produce incorrect measurements and trigger wrong control decisions.
+Sistem pemantauan volume air pada tandon umumnya menggunakan satu sensor sebagai sumber data utama. Pendekatan tersebut memiliki kelemahan berupa **Single Point of Failure (SPOF)**, yaitu kondisi ketika kegagalan satu sensor menyebabkan seluruh sistem tidak dapat memberikan informasi yang akurat.
 
-This project proposes a **Fault-Tolerant Water Tank Monitoring System** based on **Triple Modular Redundancy (TMR)**. Three HC-SR04 ultrasonic sensors are deployed redundantly and managed by an ESP32 microcontroller.
+Pada proyek ini dikembangkan sebuah sistem **Fault Tolerant Water Level Monitoring** yang menerapkan konsep **Triple Modular Redundancy (TMR)** menggunakan tiga sensor ultrasonik HC-SR04 yang dikendalikan oleh ESP32. Sistem dirancang agar tetap dapat beroperasi meskipun salah satu sensor mengalami gangguan sementara (*transient fault*) maupun kerusakan permanen (*permanent fault*).
 
-The system performs:
+Untuk meningkatkan keandalan sistem, diterapkan beberapa mekanisme fault tolerance, antara lain:
 
-* Sequential sensor triggering
-* Majority voting mechanism
-* Fault detection
-* Fault masking
-* Graceful degradation
-* Fail-safe operation
-
-allowing the monitoring process to continue even when one sensor becomes faulty.
+* **Sequential Triggering** untuk menghindari crosstalk antar sensor.
+* **Median-Based Fault Detection** untuk mendeteksi sensor yang mengalami anomali.
+* **Majority Voting** untuk menentukan nilai keluaran yang paling representatif.
+* **Fault Masking** untuk mengabaikan sensor yang mengalami kegagalan.
+* **Graceful Degradation** agar sistem tetap berjalan dengan dua sensor aktif.
+* **Fail-Safe Mode** ketika jumlah sensor aktif tidak lagi memenuhi syarat operasional.
 
 ---
 
-# 🎯 Objectives
+# 🎯 Tujuan Proyek
 
-The primary objectives of this project are:
-
-* Implement Triple Modular Redundancy (TMR) on ultrasonic sensors.
-* Increase reliability and dependability of water level monitoring.
-* Detect transient and permanent sensor failures.
-* Prevent incorrect control decisions caused by faulty sensor readings.
-* Demonstrate practical fault tolerance concepts in embedded IoT systems.
+1. Mengimplementasikan konsep Triple Modular Redundancy (TMR) pada sistem pemantauan volume air.
+2. Mengurangi dampak kegagalan sensor tunggal terhadap keluaran sistem.
+3. Meningkatkan reliability dan dependability sistem monitoring.
+4. Menguji kemampuan sistem dalam menangani gangguan sementara maupun permanen.
+5. Menerapkan konsep Fault Tolerant System pada perangkat IoT berbasis ESP32.
 
 ---
 
-# 🏗️ System Architecture
+# 🏗️ Arsitektur Sistem
 
 ```text
-            ┌──────────────┐
-            │ HC-SR04 #1   │
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ HC-SR04 #2   │
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ HC-SR04 #3   │
-            └──────┬───────┘
-                   │
-                   ▼
+                HC-SR04 #1
+                     │
+                     │
+                HC-SR04 #2
+                     │
+                     │
+                HC-SR04 #3
+                     │
+                     ▼
 
-        ┌─────────────────────┐
-        │      ESP32 MCU      │
-        │                     │
-        │ Sequential Trigger  │
-        │ Fault Detection     │
-        │ Majority Voting     │
-        │ Fault Masking       │
-        └─────────┬───────────┘
-                  │
-        ┌─────────▼───────────┐
-        │ Web Dashboard       │
-        │ Real-Time Monitor   │
-        └─────────────────────┘
+        ┌────────────────────────┐
+        │         ESP32          │
+        │                        │
+        │ Sequential Triggering  │
+        │ Fault Detection        │
+        │ Majority Voting        │
+        │ Fault Masking          │
+        └───────────┬────────────┘
+                    │
+                    ▼
+
+          Dashboard Monitoring
+                Real-Time
 ```
 
----
+Pada sistem ini ESP32 berfungsi sebagai:
 
-# ✨ Key Features
-
-## Triple Modular Redundancy (TMR)
-
-Three ultrasonic sensors simultaneously monitor the same water surface.
-
-Benefits:
-
-* Eliminates single point of failure
-* Increases measurement reliability
-* Allows fault masking
+* Pengendali pembacaan sensor secara bergantian.
+* Unit pemrosesan data.
+* Voter digital pada arsitektur TMR.
+* Server web untuk dashboard monitoring.
 
 ---
 
-## Sequential Triggering
+# ✨ Fitur Utama
 
-To avoid ultrasonic wave interference (crosstalk), sensors are triggered one at a time.
+## 🔄 Triple Modular Redundancy (TMR)
+
+Sistem menggunakan tiga sensor HC-SR04 yang mengukur objek yang sama secara paralel.
+
+Keuntungan:
+
+* Menghilangkan Single Point of Failure.
+* Meningkatkan reliabilitas sistem.
+* Mendukung fault masking.
+
+---
+
+## 📡 Sequential Triggering
+
+Karena ketiga sensor dipasang berdekatan, terdapat potensi interferensi gelombang ultrasonik (*crosstalk*).
+
+Untuk mengatasinya, sensor dipicu secara bergantian:
 
 ```text
 Sensor 1 → Delay → Sensor 2 → Delay → Sensor 3
 ```
 
-Advantages:
+Manfaat:
 
-* Stable measurements
-* Reduced noise
-* Improved accuracy
+* Mengurangi interferensi antar sensor.
+* Meningkatkan stabilitas pembacaan.
+* Menjaga akurasi hasil pengukuran.
 
 ---
 
-## Fault Detection
+## 🛡 Fault Detection
 
-The system computes:
+Sistem menghitung nilai median dari tiga pembacaan sensor.
 
-1. Median value
-2. Sensor deviation
-
-Fault condition:
+Jika terdapat sensor dengan deviasi yang melebihi ambang batas:
 
 ```text
-|Sensor Reading - Median| > Threshold
+|Nilai Sensor - Median| > Threshold
 ```
 
-Threshold:
+maka sensor tersebut akan ditandai sebagai fault.
+
+Nilai threshold yang digunakan:
 
 ```cpp
 #define THRESHOLD 5.0
@@ -133,188 +126,181 @@ Threshold:
 
 ---
 
-## Fault Masking
+## 🗳 Majority Voting
 
-If one sensor fails:
+Jika seluruh sensor sehat:
+
+```text
+Output = Rata-rata Sensor 1, Sensor 2, dan Sensor 3
+```
+
+Jika satu sensor mengalami fault:
 
 ```text
 Sensor 1 = 20 cm
 Sensor 2 = 21 cm
 Sensor 3 = 85 cm (Fault)
 
-Output = Average(S1,S2)
+Output = Rata-rata Sensor 1 dan Sensor 2
 ```
 
-Faulty sensor is automatically ignored.
+Sensor yang mengalami fault tidak akan digunakan dalam proses voting.
 
 ---
 
-## Graceful Degradation
+## 🔧 Graceful Degradation
 
-System remains operational with:
+Sistem tetap dapat beroperasi secara normal apabila:
 
-* 3/3 Sensors Active
-* 2/3 Sensors Active
+* 3 dari 3 sensor aktif
+* 2 dari 3 sensor aktif
+
+Walaupun performa mengalami degradasi, sistem masih mampu memberikan hasil yang valid.
 
 ---
 
-## Fail-Safe Mode
+## 🚨 Fail-Safe Mode
 
-If two sensors fail:
+Apabila jumlah sensor aktif kurang dari dua:
 
 ```text
 Active Sensors < 2
 ```
 
-System enters:
+maka sistem masuk ke mode:
 
 ```text
-HALTED MODE
+HALTED
 ```
 
-to prevent incorrect operation.
+untuk mencegah pengambilan keputusan yang tidak valid.
 
 ---
 
-# 🌐 Web Dashboard Features
+# 🌐 Dashboard Monitoring
 
-The dashboard provides real-time visualization of:
+Dashboard berbasis web digunakan untuk menampilkan kondisi sistem secara real-time.
 
-### Sensor Monitoring
+Informasi yang ditampilkan meliputi:
+
+### Data Sensor
 
 * Sensor 1 Distance
 * Sensor 2 Distance
 * Sensor 3 Distance
 
-### Voting Result
+### Hasil Voting
 
-* Voted Median
-* Final TMR Output
+* Median Value
+* TMR Final Output
 
-### System Health
+### Status Sistem
 
-* Active Sensors Counter
-* System Reliability Status
+* Sistem Normal (3/3 Aktif)
+* Degradasi (2/3 Aktif)
+* Fail-Safe (HALTED)
 
-### Fault Visualization
+### Monitoring Fault
 
-* Healthy Sensor
+* Sensor Sehat
 * Transient Fault
 * Permanent Fault
 
 ### Fault History
 
-Displays the latest detected fault events.
+Riwayat fault yang pernah terjadi pada sistem.
 
 ---
 
-# 🛠 Hardware Requirements
+# 🛠 Kebutuhan Perangkat Keras
 
-| Component                 | Quantity |
-| ------------------------- | -------- |
-| ESP32                     | 1        |
-| HC-SR04 Ultrasonic Sensor | 3        |
-| Breadboard                | 1        |
-| Jumper Wires              | Several  |
-| Water Tank Prototype      | 1        |
-
----
-
-# 🔌 Pin Configuration
-
-| Sensor   | Trigger Pin | Echo Pin |
-| -------- | ----------- | -------- |
-| Sensor 1 | GPIO 5      | GPIO 18  |
-| Sensor 2 | GPIO 19     | GPIO 21  |
-| Sensor 3 | GPIO 22     | GPIO 23  |
+| Komponen               | Jumlah     |
+| ---------------------- | ---------- |
+| ESP32                  | 1          |
+| HC-SR04                | 3          |
+| Breadboard             | 1          |
+| Kabel Jumper           | Secukupnya |
+| Tandon Air / Prototype | 1          |
 
 ---
 
-# 📂 Repository Structure
+# 🔌 Konfigurasi Pin
+
+| Sensor   | Trigger | Echo    |
+| -------- | ------- | ------- |
+| Sensor 1 | GPIO 5  | GPIO 18 |
+| Sensor 2 | GPIO 19 | GPIO 21 |
+| Sensor 3 | GPIO 22 | GPIO 23 |
+
+---
+
+# 📂 Struktur Repository
 
 ```text
 .
-├── ESP32/
-│   └── TMRHCSR04.ino
-│
-├── WebDashboard/
-│   ├── index.html
-│   ├── css/
-│   └── js/
-│
+├── TMRHCSR04.ino
+├── index.html
 ├── assets/
-│   ├── architecture.png
 │   ├── dashboard.png
-│   └── wiring.png
-│
+│   ├── wiring-diagram.png
+│   └── architecture.png
 └── README.md
 ```
 
 ---
 
-# 🚀 Installation Guide
+# 🚀 Panduan Instalasi
 
-## Step 1 – Clone Repository
+## 1. Clone Repository
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
+git clone https://github.com/username/nama-repository.git
 ```
 
 ---
 
-## Step 2 – Install Arduino IDE
+## 2. Instal Arduino IDE
 
-Download:
+Unduh dan instal Arduino IDE:
 
 https://www.arduino.cc/en/software
 
 ---
 
-## Step 3 – Install ESP32 Board
+## 3. Instal Board ESP32
 
-Arduino IDE:
+Masuk ke:
 
 ```text
 Tools
 → Board Manager
-→ Search "ESP32"
+→ Cari "ESP32"
 → Install
 ```
 
 ---
 
-## Step 4 – Install Required Libraries
+## 4. Konfigurasi WiFi
+
+Buka file program ESP32 dan sesuaikan bagian berikut:
 
 ```cpp
-WiFi.h
-WebServer.h
+const char* ssid = "NAMA_WIFI";
+const char* password = "PASSWORD_WIFI";
 ```
 
 ---
 
-## Step 5 – Configure WiFi
+## 5. Upload Program ke ESP32
 
-Open:
-
-```cpp
-const char* ssid = "YOUR_WIFI";
-const char* password = "YOUR_PASSWORD";
-```
-
-Replace with your network credentials.
-
----
-
-## Step 6 – Upload Firmware
-
-Select:
+Pilih:
 
 ```text
 Board : ESP32 Dev Module
-Port  : COMx
+Port  : COM sesuai perangkat
 ```
 
-Upload:
+Kemudian upload file:
 
 ```text
 TMRHCSR04.ino
@@ -322,13 +308,11 @@ TMRHCSR04.ino
 
 ---
 
-# 📱 Access Dashboard
+## 6. Jalankan Sistem
 
-After successful upload:
+Setelah ESP32 berhasil terhubung ke WiFi, buka Serial Monitor.
 
-Open Serial Monitor.
-
-Example output:
+Contoh keluaran:
 
 ```text
 Connected to WiFi
@@ -336,61 +320,63 @@ IP Address:
 192.168.1.100
 ```
 
-Open browser:
+Buka browser dan akses:
 
 ```text
 http://192.168.1.100
 ```
 
-Dashboard will appear automatically.
+Dashboard monitoring akan tampil secara otomatis.
 
 ---
 
-# 🧪 Fault Injection Testing
+# 🧪 Pengujian Sistem
 
-## Scenario 1 — Normal Operation
+## Pengujian 1 — Kondisi Normal
 
-Expected:
+Semua sensor aktif.
+
+Hasil yang diharapkan:
 
 ```text
-3/3 Active Sensors
-System Normal
+3/3 Sensor Aktif
+Status: NORMAL
 ```
 
 ---
 
-## Scenario 2 — Permanent Fault
+## Pengujian 2 — Permanent Fault
 
-Disconnect Echo pin of one sensor.
+Lepaskan kabel Echo salah satu sensor.
 
-Expected:
+Hasil yang diharapkan:
 
 ```text
-2/3 Active Sensors
-Masking Active
-System Operational
+2/3 Sensor Aktif
+Fault Masking Aktif
+Sistem Tetap Berjalan
 ```
 
 ---
 
-## Scenario 3 — Transient Fault
+## Pengujian 3 — Transient Fault
 
-Place an obstacle briefly in front of one sensor.
+Tempatkan objek sesaat di depan salah satu sensor.
 
-Expected:
+Hasil yang diharapkan:
 
 ```text
-Transient Fault Detected
-Ignored by Voter
+Transient Fault Terdeteksi
+Output Tetap Stabil
 ```
 
 ---
 
-## Scenario 4 — Multiple Faults
+## Pengujian 4 — Multiple Fault
 
-Disconnect two sensors.
+Matikan dua sensor sekaligus.
 
-Expected:
+Hasil yang diharapkan:
 
 ```text
 CRITICAL
@@ -400,32 +386,34 @@ HALTED
 
 ---
 
-# 📈 Fault Tolerance Mechanism
+# 📈 Mekanisme Fault Tolerance
 
 ```text
-Sensor Reading
-      │
-      ▼
- Median Calculation
-      │
-      ▼
- Fault Detection
-      │
-      ▼
- Fault Isolation
-      │
-      ▼
+Pembacaan Sensor
+        │
+        ▼
+ Perhitungan Median
+        │
+        ▼
+ Deteksi Fault
+        │
+        ▼
+ Isolasi Sensor Fault
+        │
+        ▼
  Majority Voting
-      │
-      ▼
- Final Output
+        │
+        ▼
+ Output Final Sistem
 ```
 
 ---
 
-# 📚 Concepts Implemented
+# 📚 Konsep yang Diimplementasikan
 
 * Fault Tolerance
+* Dependability
+* Reliability Engineering
 * Hardware Redundancy
 * Triple Modular Redundancy (TMR)
 * Majority Voting
@@ -433,15 +421,14 @@ Sensor Reading
 * Fault Masking
 * Graceful Degradation
 * Fail-Safe System
-* Dependability
-* Reliability Engineering
-* Embedded IoT Systems
+* Embedded System
+* Internet of Things (IoT)
 
 ---
 
-# 👨‍💻 Team Members
+# 👨‍💻 Tim Pengembang
 
-| Name                    | NIM             |
+| Nama                    | NIM             |
 | ----------------------- | --------------- |
 | Faris Arinanta          | 235150300111045 |
 | Bakhitah Cinta Syahirah | 235150301111037 |
@@ -450,13 +437,13 @@ Sensor Reading
 
 ---
 
-# 🎓 Course Information
+# 🎓 Informasi Akademik
 
-Fault Tolerant System (CCE60309)
+Mata Kuliah: **Fault Tolerant System (CCE60309)**
 
-Computer Engineering
+Program Studi Teknik Komputer
 
-Faculty of Computer Science
+Fakultas Ilmu Komputer
 
 Universitas Brawijaya
 
@@ -464,6 +451,6 @@ Universitas Brawijaya
 
 ---
 
-# 📄 License
+# 📄 Lisensi
 
-This project is developed for academic and educational purposes as part of the Fault Tolerant System Final Project.
+Proyek ini dikembangkan untuk keperluan akademik sebagai bagian dari Proyek Akhir Mata Kuliah Fault Tolerant System.
